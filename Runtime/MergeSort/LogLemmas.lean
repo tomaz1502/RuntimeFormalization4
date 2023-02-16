@@ -8,7 +8,7 @@ theorem log_pred : ∀ (a : ℕ) , Nat.log 2 a - 1 = Nat.log 2 (a / 2)
 | (a + 2) => by
   rw [Nat.log]
   split_ifs with h
-  { simp [Nat.add_succ_sub_one, add_zero] }
+  { simp }
   simp at h
 
 theorem log_2_val : Nat.log 2 2 = 1 := by rfl
