@@ -2,7 +2,7 @@ import Mathlib.Data.Nat.Log
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 
-theorem log_pred : ∀ (a : ℕ) , Nat.log 2 a - 1 = Nat.log 2 (a / 2)
+theorem log_pred : ∀ (a : Nat) , Nat.log 2 a - 1 = Nat.log 2 (a / 2)
 | 0 => by simp only [Nat.log_zero_right, Nat.zero_div]
 | 1 => by norm_num
 | (a + 2) => by
@@ -13,12 +13,12 @@ theorem log_pred : ∀ (a : ℕ) , Nat.log 2 a - 1 = Nat.log 2 (a / 2)
 
 theorem log_2_val : Nat.log 2 2 = 1 := by rfl
  
-theorem sum_2b (a b : ℕ) : a ≤ 2 * b → a + 2 * b ≤ 4 * b := fun h =>
+theorem sum_2b (a b : Nat) : a ≤ 2 * b → a + 2 * b ≤ 4 * b := fun h =>
   calc a + 2 * b ≤ 2 * b + 2 * b := add_le_add h rfl.ge
        _         = 4 * b := by linarith
 
 
-theorem log_2_times : ∀ (a : ℕ), 2 * Nat.log 2 (a + 2) ≤ a + 2
+theorem log_2_times : ∀ (a : Nat), 2 * Nat.log 2 (a + 2) ≤ a + 2
 | 0       => by { rw [log_2_val] }
 | (a + 1) => by
   have tmp : (a + 1) / 2 < a + 1 := Nat.div_lt_self' a 0

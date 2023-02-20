@@ -3,8 +3,9 @@ import Mathlib.Tactic.Linarith
 
 section timedSort
 
-variable {α : Type uu} (r : α → α → Prop) [DecidableRel r]
+universe u
 
+variable {α : Type u} (r : α → α → Prop) [DecidableRel r]
 local infixl:50 " ≼ " => r
 
 @[simp] def orderedInsert (a : α) : List α → (List α × Nat)

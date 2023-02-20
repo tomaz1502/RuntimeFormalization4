@@ -4,10 +4,11 @@ import Runtime.MergeSort.LogLemmas
 
 section timedSort
 
-variable {α : Type uu} (r : α → α → Prop) [DecidableRel r]
-local infixl:50 " ≼ " => r
+universe u
 
-@[simp] def split : List α → (List α × List α × ℕ)
+variable {α : Type u} [DecidableRel r]
+
+@[simp] def split : List α → (List α × List α × Nat)
   | []       => ([], [], 0)
   | (h :: t) => let (l₁, l₂, n) := split t
                 (h :: l₂, l₁, n + 1)
@@ -26,7 +27,7 @@ theorem split_complexity : ∀ (l : List α) , (split l).snd.snd = l.length
   simp
   exact split_complexity t
 
-theorem length_split_lt {a b: α} {l l₁ l₂ : List α} {n : ℕ}
+theorem length_split_lt {a b: α} {l l₁ l₂ : List α} {n : Nat}
   (h : split (a::b::l) = (l₁, l₂, n)):
     List.length l₁ < List.length (a::b::l) ∧
     List.length l₂ < List.length (a::b::l) := by
@@ -47,7 +48,7 @@ theorem length_split_lt {a b: α} {l l₁ l₂ : List α} {n : ℕ}
     rw [l₁_id, l₂_id]
   exact List.length_split_lt reconstruct
 
-theorem split_halves_length : ∀ {l l₁ l₂ : List α} {n : ℕ},
+theorem split_halves_length : ∀ {l l₁ l₂ : List α} {n : Nat},
   split l = (l₁, l₂, n) → 
     2 * List.length l₁ ≤ List.length l + 1 ∧ 2 * List.length l₂ ≤ List.length l
 | []       => by
@@ -79,7 +80,7 @@ theorem split_halves_length : ∀ {l l₁ l₂ : List α} {n : ℕ},
       exact ih₁
     }
 
-theorem split_lengths : ∀ (l l₁ l₂ : List α) {n : ℕ},
+theorem split_lengths : ∀ (l l₁ l₂ : List α) {n : Nat},
   split l = (l₁, l₂, n) → l₁.length + l₂.length = l.length
 | []  => by
   intros l₁ l₂ n

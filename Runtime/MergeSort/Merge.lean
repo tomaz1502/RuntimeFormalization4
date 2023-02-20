@@ -17,7 +17,7 @@ local infixl:50 " ≼ " => r
          (h₁ :: l₃, n + 1)
     else let (l₃, n) := merge (h₁ :: t₁) t₂
          (h₂ :: l₃, n + 1)
-termination_by merge l₁ l₂ => List.length l₁ + List.length l₂
+  termination_by merge l₁ l₂ => List.length l₁ + List.length l₂
 
 theorem merge_complexity : ∀ l₁ l₂ : List α,
   (merge r l₁ l₂).snd ≤ l₁.length + l₂.length
@@ -46,7 +46,7 @@ theorem merge_complexity : ∀ l₁ l₂ : List α,
         simp
         exact ih
     }
-termination_by merge_complexity l₁ l₂ => List.length l₁ + List.length l₂
+  termination_by merge_complexity l₁ l₂ => List.length l₁ + List.length l₂
 
 theorem merge_equivalence : ∀ l₁ l₂ : List α,
   (merge r l₁ l₂).fst = List.merge r l₁ l₂
@@ -75,6 +75,6 @@ theorem merge_equivalence : ∀ l₁ l₂ : List α,
       simp
       exact ih
   }
-termination_by merge_equivalence l₁ l₂ => List.length l₁ + List.length l₂
+  termination_by merge_equivalence l₁ l₂ => List.length l₁ + List.length l₂
 
 end timedSort
