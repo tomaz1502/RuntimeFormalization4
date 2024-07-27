@@ -8,31 +8,31 @@ universe u
 
 variable {α : Type u} [DecidableRel r]
 
-@[simp] def split : List α → (List α × List α × Nat)
-  | []       => ([], [], 0)
-  | (h :: t) => let (l₁, l₂, n) := split t
-                (h :: l₂, l₁, n + 1)
+/- @[simp] def split : List α → (List α × List α × Nat) -/
+/-   | []       => ([], [], 0) -/
+/-   | (h :: t) => let (l₁, l₂, n) := split t -/
+/-                 (h :: l₂, l₁, n + 1) -/
 
-theorem split_equivalence : ∀ (l : List α) ,
-  (split l).fst = (List.split l).fst ∧ (split l).snd.fst = (List.split l).snd
-  | [] => by simp
-  | (h :: t) => by
-    simp
-    have ⟨ih_fst, ih_snd⟩ := split_equivalence t
-    exact And.intro ih_snd ih_fst
+/- theorem split_equivalence : ∀ (l : List α) , -/
+/-   (split l).fst = (List.split l).fst ∧ (split l).snd.fst = (List.split l).snd -/
+/-   | [] => by simp -/
+/-   | (h :: t) => by -/
+/-     simp -/
+/-     have ⟨ih_fst, ih_snd⟩ := split_equivalence t -/
+/-     exact And.intro ih_snd ih_fst -/
 
-theorem split_complexity : ∀ (l : List α) , (split l).snd.snd = l.length
-| [] => by simp
-| (h :: t) => by
-  simp
-  exact split_complexity t
+/- theorem split_complexity : ∀ (l : List α) , (split l).snd.snd = l.length -/
+/- | [] => by simp -/
+/- | (h :: t) => by -/
+/-   simp -/
+/-   exact split_complexity t -/
 
 theorem length_split_lt {a b: α} {l l₁ l₂ : List α} {n : Nat}
-  (h : split (a::b::l) = (l₁, l₂, n)):
+  (h : List.split (a::b::l) = (l₁, l₂)):
     List.length l₁ < List.length (a::b::l) ∧
     List.length l₂ < List.length (a::b::l) := by
   have split_eq_full : l₁ = (a::b::l).split.fst ∧ l₂ = (a::b::l).split.snd := by
-    have l₂_n_id : (l₂, n) = (split (a :: b :: l)).snd :=
+    have l₂_n_id : (l₂, n) = (List.split (a :: b :: l)).snd :=
       (congrArg Prod.snd h).congr_right.mpr rfl
     have l₂_id : l₂ = (split (a :: b :: l)).snd.fst :=
       (congrArg Prod.fst l₂_n_id).congr_right.mp rfl
@@ -49,7 +49,7 @@ theorem length_split_lt {a b: α} {l l₁ l₂ : List α} {n : Nat}
   exact List.length_split_lt reconstruct
 
 theorem split_halves_length : ∀ {l l₁ l₂ : List α} {n : Nat},
-  split l = (l₁, l₂, n) → 
+  split l = (l₁, l₂, n) →
     2 * List.length l₁ ≤ List.length l + 1 ∧ 2 * List.length l₂ ≤ List.length l
 | []       => by
   intros h

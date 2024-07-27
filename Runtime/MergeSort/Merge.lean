@@ -5,76 +5,70 @@ section timedSort
 
 universe u
 
-variable {α : Type u} (r : α → α → Prop) [DecidableRel r]
-local infixl:50 " ≼ " => r
+variable {α : Type u} (s : α → α → Bool)
+local infixl:50 " ≼ " => s
 
-@[simp] def merge : List α → List α → (List α × Nat)
-  | [], l₂ => (l₂, 0)
-  | l₁, [] => (l₁, 0)
-  | (h₁ :: t₁), (h₂ :: t₂) =>
-    if h₁ ≼ h₂
-    then let (l₃, n) := merge t₁ (h₂ :: t₂)
-         (h₁ :: l₃, n + 1)
-    else let (l₃, n) := merge (h₁ :: t₁) t₂
-         (h₂ :: l₃, n + 1)
-  termination_by merge l₁ l₂ => List.length l₁ + List.length l₂
+@[simp] def merge (l r : List α) : (List α × Nat) :=
+  loop l r []
+where
+  loop : List α → List α → List α → (List α × Nat)
+  | [], r, t => (List.reverseAux t r, 0)
+  | l, [], t => (List.reverseAux t l, 0)
+  | a::l, b::r, t =>
+    bif s a b then
+      let (l', n) := loop l (b::r) (a::t)
+      (l', n + 1)
+    else
+      let (l', n) := loop (a::l) r (b::t)
+      (l', n + 1)
+
+theorem merge_loop_complexity : ∀ l₁ l₂ l₃ : List α,
+  (merge.loop s l₁ l₂ l₃).snd ≤ l₁.length + l₂.length
+  | [],   r,  t => by simp [merge.loop]
+  | _::_, [], t => by simp [merge.loop]
+  | a::l, b::r, t => by
+    simp [merge.loop]
+    cases s a b
+    { simp; have ih := merge_loop_complexity (a :: l) r (b :: t); simp at ih; linarith }
+    { simp; have ih := merge_loop_complexity l (b :: r) (a :: t); simp at ih; linarith }
 
 theorem merge_complexity : ∀ l₁ l₂ : List α,
-  (merge r l₁ l₂).snd ≤ l₁.length + l₂.length
-  | [], l₂ => by simp
-  | (h₁ :: t₁), [] => by simp
+  (merge s l₁ l₂).snd ≤ l₁.length + l₂.length
+  | [], l₂ => by simp [merge.loop]
+  | (h₁ :: t₁), [] => by simp [merge.loop]
   | (h₁ :: t₁), (h₂ :: t₂) => by
     unfold merge
-    split_ifs with if_hyp
-    { have ih := merge_complexity t₁ (h₂ :: t₂)
-      cases e: merge r t₁ (h₂ :: t₂) with
-      | mk l₁ l₂ =>
-        rw [e] at ih
-        simp at ih
-        show l₂ + 1 ≤ t₁.length + 1 + t₂.length + 1
-        simp
-        have ih' : l₂ ≤ t₁.length + t₂.length + 1 := ih
-        rw [Nat.add_assoc, add_comm t₂.length 1, ← Nat.add_assoc] at ih'
-        exact ih'
+    unfold merge.loop
+    cases s h₁ h₂
+    { have ih := merge_loop_complexity s (h₁ :: t₁) t₂ [h₂]
+      simp at ih
+      simp
+      linarith
     }
-    { have ih := merge_complexity (h₁ :: t₁) t₂
-      cases e: merge r (h₁ :: t₁) t₂ with
-      | mk l₁ l₂ =>
-        rw [e] at ih
-        simp at ih
-        show l₂ + 1 ≤ t₁.length + 1 + t₂.length + 1
-        simp
-        exact ih
+    { have ih := merge_loop_complexity s t₁ (h₂ :: t₂) [h₁]
+      simp at ih
+      simp
+      linarith
     }
-  termination_by merge_complexity l₁ l₂ => List.length l₁ + List.length l₂
+
+theorem merge_loop_equivalence : ∀ l₁ l₂ l₃ : List α,
+  (merge.loop s l₁ l₂ l₃).fst = List.merge.loop s l₁ l₂ l₃
+  | [], r, t => by simp [merge.loop, List.merge.loop]
+  | _::_, [], t => by simp [merge.loop, List.merge.loop]
+  | a::l, b::r, t => by
+    simp [merge.loop, List.merge.loop]
+    cases s a b
+    { simp; exact merge_loop_equivalence (a :: l) r (b :: t) }
+    { simp; exact merge_loop_equivalence l (b :: r) (a :: t) }
 
 theorem merge_equivalence : ∀ l₁ l₂ : List α,
-  (merge r l₁ l₂).fst = List.merge r l₁ l₂
-| [],       []           => by simp; rw [List.merge]
-| [],       (h₂ :: t₂)   => by simp; rw [List.merge]
-| (h₁ :: t₁), []         => by simp; rw [List.merge]; simp
-| (h₁ :: t₁), (h₂ :: t₂) => by
-  unfold merge
-  split_ifs with if_hyp
-  { have ih := merge_equivalence t₁ (h₂ :: t₂)
-    cases e : merge r t₁ (h₂ :: t₂) with
-    | mk l₁ l₂ =>
-      unfold List.merge
-      rw [e] at ih
-      simp at ih
-      split_ifs
-      simp
-      exact ih
-  }
-  { have ih := merge_equivalence (h₁ :: t₁) t₂
-    cases e : merge r (h₁ :: t₁) t₂ with
-    | mk l₁ l₂ =>
-      unfold List.merge
-      rw [e] at ih
-      split_ifs
-      simp
-      exact ih
-  }
-  termination_by merge_equivalence l₁ l₂ => List.length l₁ + List.length l₂
+  (merge s l₁ l₂).fst = List.merge s l₁ l₂
+  | [],       []           => by simp [merge.loop]
+  | [],       (h₂ :: t₂)   => by simp [merge.loop]
+  | (h₁ :: t₁), []         => by simp [merge.loop]
+  | (h₁ :: t₁), (h₂ :: t₂) => by
+    unfold merge
+    unfold List.merge
+    rw [merge_loop_equivalence s (h₁ :: t₁) (h₂ :: t₂) []]
 
 end timedSort
