@@ -39,10 +39,8 @@ theorem orderedInsert_complexity (a : α) :
   | b :: l' => by
     simp
     split_ifs with h
-    { simp; apply Nat.succ_le_succ; exact Nat.zero_le (List.length l') }
-    simp
-    have ih := orderedInsert_complexity a l'
-    exact Nat.add_le_add ih le_rfl
+    { simp }
+    simp [orderedInsert_complexity a l']
 
 theorem orderedInsert_equivalence (a : α) : ∀ l : List α,
   (orderedInsert r a l).fst = List.orderedInsert r a l := fun l =>
@@ -52,8 +50,7 @@ theorem orderedInsert_equivalence (a : α) : ∀ l : List α,
     simp
     split_ifs with h
     { rfl }
-    simp
-    exact orderedInsert_equivalence a l'
+    simp [orderedInsert_equivalence a l']
 
 theorem orderedInsert_increases_length (a : α) : ∀ l : List α,
   (orderedInsert r a l).fst.length = l.length + 1 := fun l =>
@@ -63,8 +60,7 @@ theorem orderedInsert_increases_length (a : α) : ∀ l : List α,
     simp
     split_ifs with h
     { rfl }
-    simp
-    exact orderedInsert_increases_length a l'
+    simp [orderedInsert_increases_length a l']
 
 theorem insertionSort_preserves_length : ∀ l : List α,
   (insertionSort r l).fst.length = l.length := fun l =>
@@ -73,17 +69,13 @@ theorem insertionSort_preserves_length : ∀ l : List α,
   | a :: l' => by
     simp
     rw [orderedInsert_increases_length r a (insertionSort r l').fst]
-    simp
-    exact insertionSort_preserves_length l'
-
-#check add_le_add
+    simp [insertionSort_preserves_length l']
 
 theorem insertionSort_complexity :
   ∀ l : List α, (insertionSort r l).snd ≤ l.length * l.length := fun l =>
   match l with
   | [] => by simp
   | a :: l' => by
-    simp
     have same_lengths := insertionSort_preserves_length r l'
     have mid :
       (insertionSort r l').snd + (orderedInsert r a (insertionSort r l').fst).snd ≤
@@ -97,8 +89,7 @@ theorem insertionSort_complexity :
           orderedInsert_complexity r a (insertionSort r l').fst
         rw [same_lengths] at orderedInsert_compl
         exact orderedInsert_compl
-    apply le_trans mid
-    apply le_trans mid₂
+    simp
     linarith
 
 theorem insertionSort_equivalence : ∀ l : List α,
@@ -106,8 +97,7 @@ theorem insertionSort_equivalence : ∀ l : List α,
   match l with
   | [] => by simp
   | a :: l' => by
-    simp
-    rw [orderedInsert_equivalence, insertionSort_equivalence l']
+    simp [orderedInsert_equivalence, insertionSort_equivalence l']
 
 end timedSort
 
