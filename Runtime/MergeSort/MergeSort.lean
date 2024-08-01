@@ -1,3 +1,4 @@
+import Mathlib
 import Runtime.MergeSort.LogLemmas
 import Runtime.MergeSort.Merge
 import Runtime.MergeSort.Split
@@ -90,9 +91,128 @@ theorem mergeSort_complexity : ∀ l : List α,
             (8 * l₂.length * Nat.log 2 l₂.length) +
             (merge.loop (r · ·) ms1 ms2 []).2 := by linarith
           apply le_trans this
+
+          have : (merge.loop (r · ·) ms1 ms2 []).2 ≤ ms1.length + ms2.length :=
+            merge_loop_complexity (r · ·) ms1 ms2 []
+
+          have :
+            (8 * l₁.length * Nat.log 2 l₁.length) +
+            (8 * l₂.length * Nat.log 2 l₂.length) +
+            (merge.loop (r · ·) ms1 ms2 []).2
+            ≤
+            (8 * l₁.length * Nat.log 2 l₁.length) +
+            (8 * l₂.length * Nat.log 2 l₂.length) +
+            ms1.length + ms2.length := by linarith
+
+          apply le_trans this
+
+          have sortL1Equiv : (mergeSort (r · ·) l₁).1 = List.mergeSort (r · ·) l₁ :=
+            by rw [mergeSort_equivalence]
+          have sortL2Equiv : (mergeSort (r · ·) l₂).1 = List.mergeSort (r · ·) l₂ :=
+            by rw [mergeSort_equivalence]
+
+          have : ms1 = (mergeSort (r · ·) l₁).1 := by
+            rw [e1]
+          have ms1Ident : ms1 = (List.mergeSort (r · ·) l₁) := by
+            rw [this, sortL1Equiv]
+
+          have : ms2 = (mergeSort (r · ·) l₂).1 := by
+            rw [e2]
+          have ms2Ident : ms2 = (List.mergeSort (r · ·) l₂) := by
+            rw [this, sortL2Equiv]
+
+          have ms1Length : ms1.length = l₁.length := by
+            rw [ms1Ident, List.length_mergeSort]
+
+          have ms2Length : ms2.length = l₂.length := by
+            rw [ms2Ident, List.length_mergeSort]
+
+          rw [ms1Length, ms2Length]
+
+          have := split_lengths (a :: b :: l) l₁ l₂ e
+          rw [add_assoc, this]
+
           have ⟨l₁_small, l₂_small⟩ := split_halves_length e
 
+          simp at l₁_small
+          simp at l₂_small
+          simp
+
+          have : 8 * l₁.length ≤ 8 * ((l.length + 1 + 1 + 1) / 2) := by linarith
+          have :
+            8 * l₁.length * Nat.log 2 l₁.length ≤
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 l₁.length :=
+              Nat.mul_le_mul_right _ this
+          have :
+            8 * l₁.length * Nat.log 2 l₁.length +
+            8 * l₂.length * Nat.log 2 l₂.length + (l.length + 1 + 1)
+            ≤
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 l₁.length +
+            8 * l₂.length * Nat.log 2 l₂.length + (l.length + 1 + 1) :=
+            by linarith
+          apply le_trans this
+
+          have : 8 * l₂.length ≤ 8 * ((l.length + 1 + 1) / 2) := by linarith
+          have :
+            8 * l₂.length * Nat.log 2 l₂.length ≤
+            8 * ((l.length + 1 + 1) / 2) * Nat.log 2 l₂.length :=
+              Nat.mul_le_mul_right (Nat.log 2 l₂.length) this
+          have :
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 l₁.length +
+            8 * l₂.length * Nat.log 2 l₂.length + (l.length + 1 + 1)
+            ≤
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 l₁.length +
+            8 * ((l.length + 1 + 1) / 2) * Nat.log 2 l₂.length + (l.length + 1 + 1) :=
+            by linarith
+          apply le_trans this
+
+          have :
+            Nat.log 2 l₁.length ≤ Nat.log 2 ((l.length + 1 + 1 + 1) / 2) :=
+             Nat.log_monotone l₁_small
+          have :
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 l₁.length
+            ≤
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 ((l.length + 1 + 1 + 1) / 2) :=
+            Nat.mul_le_mul_left _ this
+          have :
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 l₁.length +
+            8 * ((l.length + 1 + 1) / 2) * Nat.log 2 l₂.length + (l.length + 1 + 1)
+            ≤
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 ((l.length + 1 + 1 + 1) / 2)  +
+            8 * ((l.length + 1 + 1) / 2) * Nat.log 2 l₂.length + (l.length + 1 + 1) :=
+              by linarith
+          apply le_trans this
+
+          have :
+            Nat.log 2 l₂.length ≤ Nat.log 2 ((l.length + 1 + 1) / 2) :=
+             Nat.log_monotone l₂_small
+
+          have :
+            8 * ((l.length + 1 + 1) / 2) * Nat.log 2 l₂.length
+            ≤
+            8 * ((l.length + 1 + 1) / 2) * Nat.log 2 ((l.length + 1 + 1) / 2) :=
+            Nat.mul_le_mul_left _ this
+          have :
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 ((l.length + 1 + 1 + 1) / 2) +
+            8 * ((l.length + 1 + 1) / 2) * Nat.log 2 l₂.length + (l.length + 1 + 1)
+            ≤
+            8 * ((l.length + 1 + 1 + 1) / 2) * Nat.log 2 ((l.length + 1 + 1 + 1) / 2)  +
+            8 * ((l.length + 1 + 1) / 2) * Nat.log 2 ((l.length + 2) / 2) + (l.length + 1 + 1) :=
+              by linarith
+          apply le_trans this
+
+          let N := l.length + 2
+          show
+            8 * ((N + 1) / 2) * Nat.log 2 ((N + 1) / 2) +
+            8 * (N / 2) * Nat.log 2 (N / 2) + N
+            ≤
+            8 * N * Nat.log 2 N
+
+          rw [← log_pred, ← log_pred]
+
+
           admit
+
 
     termination_by l => List.length l
 
