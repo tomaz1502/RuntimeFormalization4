@@ -1,4 +1,3 @@
-import Mathlib
 import Runtime.MergeSort.LogLemmas
 import Runtime.MergeSort.Merge
 import Runtime.MergeSort.Split
@@ -69,6 +68,22 @@ theorem mergeSort_complexity : ∀ l : List α,
           have := split_lt.1
           have := split_lt.2
 
+          have sortL1Equiv : (mergeSort (r · ·) l₁).1 = List.mergeSort (r · ·) l₁ :=
+            by rw [mergeSort_equivalence]
+          have sortL2Equiv : (mergeSort (r · ·) l₂).1 = List.mergeSort (r · ·) l₂ :=
+            by rw [mergeSort_equivalence]
+
+          have : ms1 = (mergeSort (r · ·) l₁).1 := by rw [e1]
+          have ms1Ident : ms1 = (List.mergeSort (r · ·) l₁) := by rw [this, sortL1Equiv]
+
+          have : ms2 = (mergeSort (r · ·) l₂).1 := by rw [e2]
+          have ms2Ident : ms2 = (List.mergeSort (r · ·) l₂) := by rw [this, sortL2Equiv]
+
+          have ms1Length : ms1.length = l₁.length := by rw [ms1Ident, List.length_mergeSort]
+          have ms2Length : ms2.length = l₂.length := by rw [ms2Ident, List.length_mergeSort]
+
+          have ⟨l₁_small, l₂_small⟩ := split_halves_length e
+
           have ih1 := mergeSort_complexity l₁
           have ih2 := mergeSort_complexity l₂
           rw [e1] at ih1
@@ -76,63 +91,33 @@ theorem mergeSort_complexity : ∀ l : List α,
           rw [e2] at ih2
           simp at ih2
 
-          have :
-            n1 + n2 + (merge.loop (r · ·) ms1 ms2 []).2 ≤
-            (8 * l₁.length * Nat.log 2 l₁.length) + n2 + (merge.loop (r · ·) ms1 ms2 []).2 :=
-              by linarith
-
+          have : n1 + n2 + (merge.loop (r · ·) ms1 ms2 []).2 ≤
+                   8 * l₁.length * Nat.log 2 l₁.length +
+                   8 * l₂.length * Nat.log 2 l₂.length +
+                   (a :: b :: l).length := by
+            calc
+              n1 + n2 + (merge.loop (r · ·) ms1 ms2 []).2 ≤
+              8 * l₁.length * Nat.log 2 l₁.length +
+              8 * l₂.length * Nat.log 2 l₂.length +
+              (merge.loop (r · ·) ms1 ms2 []).2
+                := by linarith
+              _ ≤
+              8 * l₁.length * Nat.log 2 l₁.length +
+              8 * l₂.length * Nat.log 2 l₂.length +
+              ms1.length + ms2.length := by
+                have := merge_loop_complexity (r · ·) ms1 ms2 []
+                linarith
+              _ =
+              8 * l₁.length * Nat.log 2 l₁.length +
+              8 * l₂.length * Nat.log 2 l₂.length +
+              l₁.length + l₂.length := by
+                rw [ms1Length, ms2Length]
+              _ =
+              8 * l₁.length * Nat.log 2 l₁.length +
+              8 * l₂.length * Nat.log 2 l₂.length +
+              (a :: b :: l).length := by
+                rw [add_assoc, split_lengths (a :: b :: l) l₁ l₂ e]
           apply le_trans this
-          have :
-            (8 * l₁.length * Nat.log 2 l₁.length) +
-            n2 +
-            (merge.loop (r · ·) ms1 ms2 []).2
-            ≤
-            (8 * l₁.length * Nat.log 2 l₁.length) +
-            (8 * l₂.length * Nat.log 2 l₂.length) +
-            (merge.loop (r · ·) ms1 ms2 []).2 := by linarith
-          apply le_trans this
-
-          have : (merge.loop (r · ·) ms1 ms2 []).2 ≤ ms1.length + ms2.length :=
-            merge_loop_complexity (r · ·) ms1 ms2 []
-
-          have :
-            (8 * l₁.length * Nat.log 2 l₁.length) +
-            (8 * l₂.length * Nat.log 2 l₂.length) +
-            (merge.loop (r · ·) ms1 ms2 []).2
-            ≤
-            (8 * l₁.length * Nat.log 2 l₁.length) +
-            (8 * l₂.length * Nat.log 2 l₂.length) +
-            ms1.length + ms2.length := by linarith
-
-          apply le_trans this
-
-          have sortL1Equiv : (mergeSort (r · ·) l₁).1 = List.mergeSort (r · ·) l₁ :=
-            by rw [mergeSort_equivalence]
-          have sortL2Equiv : (mergeSort (r · ·) l₂).1 = List.mergeSort (r · ·) l₂ :=
-            by rw [mergeSort_equivalence]
-
-          have : ms1 = (mergeSort (r · ·) l₁).1 := by
-            rw [e1]
-          have ms1Ident : ms1 = (List.mergeSort (r · ·) l₁) := by
-            rw [this, sortL1Equiv]
-
-          have : ms2 = (mergeSort (r · ·) l₂).1 := by
-            rw [e2]
-          have ms2Ident : ms2 = (List.mergeSort (r · ·) l₂) := by
-            rw [this, sortL2Equiv]
-
-          have ms1Length : ms1.length = l₁.length := by
-            rw [ms1Ident, List.length_mergeSort]
-
-          have ms2Length : ms2.length = l₂.length := by
-            rw [ms2Ident, List.length_mergeSort]
-
-          rw [ms1Length, ms2Length]
-
-          have := split_lengths (a :: b :: l) l₁ l₂ e
-          rw [add_assoc, this]
-
-          have ⟨l₁_small, l₂_small⟩ := split_halves_length e
 
           simp at l₁_small
           simp at l₂_small
@@ -208,11 +193,55 @@ theorem mergeSort_complexity : ∀ l : List α,
             ≤
             8 * N * Nat.log 2 N
 
-          rw [← log_pred, ← log_pred]
+          rw [← log_pred N]
 
-
-          admit
-
+          have cancel2 : forall M : Nat, 8 * (M / 2) ≤ 4 * M := by omega
+          have simp_sub : forall (a : Nat) , a ≥ 2 * N → a + 2 * N - 4 * N = a - 2 * N := by omega
+          have N_ge_2 : 2 ≤ N := by linarith
+          calc
+            8 * ((N + 1) / 2) * (Nat.log 2 ((N + 1) / 2)) +
+            8 * (N / 2) * (Nat.log 2 N - 1) + N
+            ≤
+            8 * ((N + 1) / 2) * (Nat.log 2 N) +
+            8 * (N / 2) * (Nat.log 2 N - 1) + N
+              := by simp
+                    rw [log_pred]
+                    have : (N + 1) / 2 ≤ N := by omega
+                    have : Nat.log 2 ((N + 1) / 2) ≤ Nat.log 2 N := Nat.log_monotone this
+                    exact Nat.mul_le_mul_left _ this
+            _ ≤
+            4 * (N + 1) * (Nat.log 2 N) +
+            8 * (N / 2) * (Nat.log 2 N - 1) + N
+              := by simp; exact Nat.mul_le_mul_right _ (cancel2 (N + 1))
+            _ ≤
+            4 * (N + 1) * (Nat.log 2 N) +
+            4 * N * (Nat.log 2 N - 1) + N
+              := by simp; exact Nat.mul_le_mul_right _ (cancel2 N)
+            _ =
+            4 * N * (Nat.log 2 N) + 4 * (Nat.log 2 N) +
+            4 * N * (Nat.log 2 N - 1) + N
+              := by linarith
+            _ ≤
+            4 * N * (Nat.log 2 N) + 2 * N + 4 * N * (Nat.log 2 N - 1) + N
+              := by have := log_2_times N; linarith
+            _ = 4 * N * Nat.log 2 N + 2 * N + 4 * N * Nat.log 2 N - (4 * N) + N
+              := by rw [Nat.mul_sub_left_distrib, Nat.mul_one]
+                    simp
+                    have : 4 * N ≤ 4 * N * Nat.log 2 N :=
+                      by simp; exact Nat.log_pos (by simp) N_ge_2
+                    rw [Nat.add_sub_assoc this _]
+            _ = 8 * N * Nat.log 2 N + 2 * N - 4 * N + N := by simp; apply sub_left_eq; linarith
+            _ = 8 * N * Nat.log 2 N - 2 * N + N := by
+              simp
+              apply simp_sub (8 * N * Nat.log 2 N)
+              have : 1 ≤ Nat.log 2 N := Nat.log_pos (by simp) N_ge_2
+              have := Nat.mul_le_mul_left (2 * N) this
+              linarith
+            _ ≤ 8 * N * Nat.log 2 N := by
+              have : N ≤ 8 * N * Nat.log 2 N := by
+                have : 1 ≤ Nat.log 2 N := Nat.log_pos (by simp) N_ge_2
+                have := Nat.mul_le_mul_left N this
+                linarith
+              omega
 
     termination_by l => List.length l
-
