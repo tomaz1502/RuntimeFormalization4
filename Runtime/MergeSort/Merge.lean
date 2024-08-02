@@ -1,7 +1,25 @@
+/-
+Copyright (c) 2024 Tomaz Mascarenhas. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Tomaz Mascarenhas
+-/
 import Mathlib.Data.List.Sort
 import Mathlib.Tactic.Linarith
+/-!
+# Timed Merge
+  This file defines a new version of Merge that, besides combining the input lists, counts the
+  number of operations made through the execution of the algorithm. Also, it presents proofs of
+  its time complexity and it's equivalence to the one defined in Data/List/Sort.lean
+## Main Definition
+  - Timed.merge : list α → list α → (list α × ℕ)
+## Main Results
+  - Timed.merge_complexity :
+      ∀ l₁ l₂ : list α, (Timed.merge l₁ l₂).snd ≤ l₁.length + l₂.length
+  - Timed.merge_equivalence :
+      ∀ l₁ l₂ : list α, (Timed.merge l₁ l₂).fst = List.merge l₁ l₂
+-/
 
-section timedSort
+namespace Timed
 
 universe u
 
@@ -29,8 +47,8 @@ theorem merge_loop_complexity : ∀ l₁ l₂ l₃ : List α,
   | a::l, b::r, t => by
     simp [merge.loop]
     cases s a b
-    { simp; have ih := merge_loop_complexity (a :: l) r (b :: t); simp at ih; linarith }
-    { simp; have ih := merge_loop_complexity l (b :: r) (a :: t); simp at ih; linarith }
+    · simp; have ih := merge_loop_complexity (a :: l) r (b :: t); simp at ih; linarith
+    · simp; have ih := merge_loop_complexity l (b :: r) (a :: t); simp at ih; linarith
 
 theorem merge_complexity : ∀ l₁ l₂ : List α,
   (merge s l₁ l₂).snd ≤ l₁.length + l₂.length
@@ -40,16 +58,14 @@ theorem merge_complexity : ∀ l₁ l₂ : List α,
     unfold merge
     unfold merge.loop
     cases s h₁ h₂
-    { have ih := merge_loop_complexity s (h₁ :: t₁) t₂ [h₂]
+    · have ih := merge_loop_complexity s (h₁ :: t₁) t₂ [h₂]
       simp at ih
       simp
       linarith
-    }
-    { have ih := merge_loop_complexity s t₁ (h₂ :: t₂) [h₁]
+    · have ih := merge_loop_complexity s t₁ (h₂ :: t₂) [h₁]
       simp at ih
       simp
       linarith
-    }
 
 theorem merge_loop_equivalence : ∀ l₁ l₂ l₃ : List α,
   (merge.loop s l₁ l₂ l₃).fst = List.merge.loop s l₁ l₂ l₃
@@ -58,8 +74,8 @@ theorem merge_loop_equivalence : ∀ l₁ l₂ l₃ : List α,
   | a::l, b::r, t => by
     simp [merge.loop, List.merge.loop]
     cases s a b
-    { simp; exact merge_loop_equivalence (a :: l) r (b :: t) }
-    { simp; exact merge_loop_equivalence l (b :: r) (a :: t) }
+    · simp; exact merge_loop_equivalence (a :: l) r (b :: t)
+    · simp; exact merge_loop_equivalence l (b :: r) (a :: t)
 
 theorem merge_equivalence : ∀ l₁ l₂ : List α,
   (merge s l₁ l₂).fst = List.merge s l₁ l₂
@@ -71,4 +87,4 @@ theorem merge_equivalence : ∀ l₁ l₂ : List α,
     unfold List.merge
     rw [merge_loop_equivalence s (h₁ :: t₁) (h₂ :: t₂) []]
 
-end timedSort
+end Timed

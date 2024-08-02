@@ -1,7 +1,25 @@
+/-
+Copyright (c) 2024 Tomaz Mascarenhas. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Tomaz Mascarenhas
+-/
 import Mathlib.Data.List.Sort
 import Mathlib.Tactic.Linarith
+/-!
+# Timed Insertion Sort
+  This file defines a new version of Insertion Sort that, besides sorting the input list, counts the
+  number of comparisons made through the execution of the algorithm. Also, it presents proofs of
+  its time complexity and its equivalence to the one defined in Data/List/Sort.lean
+ ## Main Definition
+  - Timed.insertion_sort : list α → (list α × ℕ)
+## Main Results
+  - Timed.insertion_sort_complexity :
+      ∀ l : list α, (Timed.insertionSort r l).snd ≤ l.length * l.length
+  - Timed.insertion_sort_equivalence :
+      ∀ l : list α, (Timed.insertionSort r l).fst = List.insertionSort r l
+-/
 
-section timedSort
+namespace Timed
 
 universe u
 
@@ -14,56 +32,41 @@ local infixl:50 " ≼ " => r
               else let (l', n) := orderedInsert a l
                    (b :: l', n + 1)
 
-#eval orderedInsert (· ≤ ·) 2 [5, 3, 1, 4]
--- ([2, 5, 3, 1, 4], 1)
-
-#eval orderedInsert (· ≤ ·) 9 [1, 0, 8]
--- ([1, 0, 8, 9], 3)
-
 @[simp] def insertionSort : List α → (List α × Nat)
   | [] => ([], 0)
   | (h :: t) => let (l', n)  := insertionSort t
                 let (l'', m) := orderedInsert r h l'
                 (l'', n + m)
 
-#eval insertionSort (· ≤ ·) [1, 2, 3, 4, 5]
--- ([1, 2, 3, 4, 5], 4)
-
-#eval insertionSort (· ≤ ·) [5, 4, 3, 2, 1]
--- ([1, 2, 3, 4, 5], 10)
-
 theorem orderedInsert_complexity (a : α) :
-  ∀ l : List α, (orderedInsert r a l).snd ≤ l.length := fun l =>
-  match l with
+    ∀ l : List α, (orderedInsert r a l).snd ≤ l.length
   | []     => by simp
   | b :: l' => by
     simp
     split_ifs with h
-    { simp }
-    simp [orderedInsert_complexity a l']
+    · simp
+    · simp [orderedInsert_complexity a l']
 
 theorem orderedInsert_equivalence (a : α) : ∀ l : List α,
-  (orderedInsert r a l).fst = List.orderedInsert r a l := fun l =>
-  match l with
+    (orderedInsert r a l).fst = List.orderedInsert r a l
   | [] => by simp
   | b :: l' => by
     simp
     split_ifs with h
-    { rfl }
-    simp [orderedInsert_equivalence a l']
+    · rfl
+    · simp [orderedInsert_equivalence a l']
 
 theorem orderedInsert_increases_length (a : α) : ∀ l : List α,
-  (orderedInsert r a l).fst.length = l.length + 1 := fun l =>
-  match l with
+    (orderedInsert r a l).fst.length = l.length + 1
   | [] => by simp
   | b :: l' => by
     simp
     split_ifs with h
-    { rfl }
-    simp [orderedInsert_increases_length a l']
+    · rfl
+    · simp [orderedInsert_increases_length a l']
 
 theorem insertionSort_preserves_length : ∀ l : List α,
-  (insertionSort r l).fst.length = l.length := fun l =>
+    (insertionSort r l).fst.length = l.length := fun l =>
   match l with
   | [] => by simp
   | a :: l' => by
@@ -72,8 +75,7 @@ theorem insertionSort_preserves_length : ∀ l : List α,
     simp [insertionSort_preserves_length l']
 
 theorem insertionSort_complexity :
-  ∀ l : List α, (insertionSort r l).snd ≤ l.length * l.length := fun l =>
-  match l with
+    ∀ l : List α, (insertionSort r l).snd ≤ l.length * l.length
   | [] => by simp
   | a :: l' => by
     have same_lengths := insertionSort_preserves_length r l'
@@ -93,11 +95,9 @@ theorem insertionSort_complexity :
     linarith
 
 theorem insertionSort_equivalence : ∀ l : List α,
-  (insertionSort r l).fst = List.insertionSort r l := fun l =>
-  match l with
+    (insertionSort r l).fst = List.insertionSort r l
   | [] => by simp
   | a :: l' => by
     simp [orderedInsert_equivalence, insertionSort_equivalence l']
 
-end timedSort
-
+end Timed

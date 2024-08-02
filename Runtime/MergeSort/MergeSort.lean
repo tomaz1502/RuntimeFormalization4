@@ -1,11 +1,52 @@
-import Runtime.MergeSort.LogLemmas
-import Runtime.MergeSort.Merge
-import Runtime.MergeSort.Split
+/-
+Copyright (c) 2024 Tomaz Mascarenhas. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Tomaz Mascarenhas
+-/
+import Mathlib.Computability.Timed.Merge
+import Mathlib.Computability.Timed.Split
+import Mathlib.Data.List.Sort
+import Mathlib.Tactic.Linarith
+/-!
+# Timed Merge Sort
+  This file defines a new version of Merge Sort that, besides sorting the input list, counts the
+  number of operations made through the execution of the algorithm. Also, it presents proofs of
+  its time complexity and its equivalence to the one defined in Data/List/Sort.lean
+## Main Definition:
+  - Timed.mergeSort : list α → (list α × ℕ)
+## Main Results:
+  - Timed.mergeSort_complexity :
+      ∀ l : list α, (Timed.mergeSort r l).snd ≤ 8 * l.length * Nat.log 2 l.length
+  - Timed.mergeSort_equivalence :
+      ∀ l : list α, (Timed.mergeSort r l).fst = list.mergeSort r l
+-/
+
+namespace Timed
 
 universe u
 
-variable {α : Type} (r : α → α → Prop) [DecidableRel r]
+variable {α : Type u} (r : α → α → Prop) [DecidableRel r]
 local infixl:50 " ≼ " => r
+
+lemma log_pred : ∀ (a : Nat) , Nat.log 2 a - 1 = Nat.log 2 (a / 2)
+  | 0 => by simp only [Nat.log_zero_right, Nat.zero_div]
+  | 1 => by norm_num
+  | (a + 2) => by
+    rw [Nat.log]
+    split_ifs with h
+    · simp
+    · simp at h
+
+lemma log_2_le : ∀ (a : Nat), 2 * Nat.log 2 a ≤ a
+  | 0       => by simp
+  | (a + 1) => by
+    have : (a + 1) / 2 < a + 1 := Nat.div_lt_self' a 0
+    rw [Nat.log]
+    split_ifs
+    · have := log_2_le ((a + 1) / 2); omega
+    · simp
+
+lemma sub_left_eq (a b c : Nat) (h : a = b) : a - c = b - c := by rw [h]
 
 @[simp] def mergeSort : List α → (List α × Nat)
   | [] => ([], 0)
@@ -23,12 +64,12 @@ local infixl:50 " ≼ " => r
   termination_by l => List.length l
 
 theorem mergeSort_cons_cons {a b} {l l₁ l₂ : List α}
-      (h : List.split (a :: b :: l) = (l₁, l₂)) :
-      (mergeSort r (a :: b :: l)).1 = (merge (r · ·) (mergeSort r l₁).1 (mergeSort r l₂).1).1 :=
-    by simp [mergeSort]
-       simp at h
-       have ⟨h₁, h₂⟩ := h
-       rw [← h₁, ← h₂]
+    (h : List.split (a :: b :: l) = (l₁, l₂)) :
+    (mergeSort r (a :: b :: l)).1 = (merge (r · ·) (mergeSort r l₁).1 (mergeSort r l₂).1).1 :=
+  by simp [mergeSort]
+     simp at h
+     have ⟨h₁, h₂⟩ := h
+     rw [← h₁, ← h₂]
 
 theorem mergeSort_equivalence : ∀ (l : List α), (mergeSort r l).fst = List.mergeSort r l
   | []          => by simp [mergeSort]
@@ -36,12 +77,13 @@ theorem mergeSort_equivalence : ∀ (l : List α), (mergeSort r l).fst = List.me
   | a :: b :: l => by
       have : (l.split.1).length < l.length + 1 := Nat.lt_add_one_of_le (List.length_split_fst_le l)
       have : (l.split.2).length < l.length + 1 := Nat.lt_add_one_of_le (List.length_split_snd_le l)
-      rw [List.mergeSort_cons_cons r (Prod.ext rfl rfl)]
-      rw [mergeSort_cons_cons r (Prod.ext rfl rfl)]
-      rw [merge_equivalence]
-      rw [mergeSort_equivalence (a :: l.split.1)]
-      rw [mergeSort_equivalence (b :: l.split.2)]
-    termination_by l => List.length l
+      rw [ List.mergeSort_cons_cons r (Prod.ext rfl rfl)
+         , mergeSort_cons_cons r (Prod.ext rfl rfl)
+         , merge_equivalence
+         , mergeSort_equivalence (a :: l.split.1)
+         , mergeSort_equivalence (b :: l.split.2)
+         ]
+  termination_by l => List.length l
 
 theorem mergeSort_cons_cons_snd {a b} {l l₁ l₂ : List α}
   (hs : List.split (a :: b :: l) = (l₁, l₂)) :
@@ -63,7 +105,6 @@ theorem mergeSort_complexity : ∀ l : List α,
       | mk ms1 n1 =>
         cases e2 : mergeSort r l₂ with
         | mk ms2 n2 =>
-          simp
           have split_lt := @List.length_split_lt α a b l l₁ l₂ e
           have := split_lt.1
           have := split_lt.2
@@ -156,31 +197,21 @@ theorem mergeSort_complexity : ∀ l : List α,
           have simp_sub : forall (M : Nat) , M ≥ 2 * N → M + 2 * N - 4 * N = M - 2 * N := by omega
           have N_ge_2 : 2 ≤ N := by linarith
           calc
-            8 * ((N + 1) / 2) * (Nat.log 2 ((N + 1) / 2)) +
-            8 * (N / 2) * (Nat.log 2 N - 1) + N
-            ≤
-            8 * ((N + 1) / 2) * (Nat.log 2 N) +
-            8 * (N / 2) * (Nat.log 2 N - 1) + N
+            8 * ((N + 1) / 2) * (Nat.log 2 ((N + 1) / 2)) + 8 * (N / 2) * (Nat.log 2 N - 1) + N ≤
+            8 * ((N + 1) / 2) * (Nat.log 2 N) + 8 * (N / 2) * (Nat.log 2 N - 1) + N
               := by simp
                     rw [log_pred]
                     have : (N + 1) / 2 ≤ N := by omega
                     have : Nat.log 2 ((N + 1) / 2) ≤ Nat.log 2 N := Nat.log_monotone this
                     exact Nat.mul_le_mul_left _ this
-            _ ≤
-            4 * (N + 1) * (Nat.log 2 N) +
-            8 * (N / 2) * (Nat.log 2 N - 1) + N
+            _ ≤ 4 * (N + 1) * (Nat.log 2 N) + 8 * (N / 2) * (Nat.log 2 N - 1) + N
               := by simp; exact Nat.mul_le_mul_right _ (cancel2 (N + 1))
-            _ ≤
-            4 * (N + 1) * (Nat.log 2 N) +
-            4 * N * (Nat.log 2 N - 1) + N
+            _ ≤ 4 * (N + 1) * (Nat.log 2 N) + 4 * N * (Nat.log 2 N - 1) + N
               := by simp; exact Nat.mul_le_mul_right _ (cancel2 N)
-            _ =
-            4 * N * (Nat.log 2 N) + 4 * (Nat.log 2 N) +
-            4 * N * (Nat.log 2 N - 1) + N
+            _ = 4 * N * (Nat.log 2 N) + 4 * (Nat.log 2 N) + 4 * N * (Nat.log 2 N - 1) + N
               := by linarith
-            _ ≤
-            4 * N * (Nat.log 2 N) + 2 * N + 4 * N * (Nat.log 2 N - 1) + N
-              := by have := log_2_times N; linarith
+            _ ≤ 4 * N * (Nat.log 2 N) + 2 * N + 4 * N * (Nat.log 2 N - 1) + N
+              := by have := log_2_le N; linarith
             _ = 4 * N * Nat.log 2 N + 2 * N + 4 * N * Nat.log 2 N - (4 * N) + N
               := by rw [Nat.mul_sub_left_distrib, Nat.mul_one]
                     simp
@@ -200,5 +231,6 @@ theorem mergeSort_complexity : ∀ l : List α,
                 have := Nat.mul_le_mul_left N this
                 linarith
               omega
+  termination_by l => List.length l
 
-    termination_by l => List.length l
+end Timed
