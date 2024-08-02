@@ -1,6 +1,5 @@
 import Mathlib.Data.Nat.Log
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
 
 theorem log_pred : ∀ (a : Nat) , Nat.log 2 a - 1 = Nat.log 2 (a / 2)
 | 0 => by simp only [Nat.log_zero_right, Nat.zero_div]
@@ -10,12 +9,6 @@ theorem log_pred : ∀ (a : Nat) , Nat.log 2 a - 1 = Nat.log 2 (a / 2)
   split_ifs with h
   { simp }
   simp at h
-
-theorem log_2_val : Nat.log 2 2 = 1 := by rfl
-
-theorem sum_2b (a b : Nat) : a ≤ 2 * b → a + 2 * b ≤ 4 * b := fun h =>
-  calc a + 2 * b ≤ 2 * b + 2 * b := add_le_add h rfl.ge
-       _         = 4 * b := by linarith
 
 theorem log_2_times : ∀ (a : Nat), 2 * Nat.log 2 a ≤ a
 | 0       => by simp
