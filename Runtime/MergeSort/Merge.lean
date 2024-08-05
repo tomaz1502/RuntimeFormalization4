@@ -41,17 +41,17 @@ where
       (l', n + 1)
 
 theorem merge_loop_complexity : ∀ l₁ l₂ l₃ : List α,
-  (merge.loop s l₁ l₂ l₃).snd ≤ l₁.length + l₂.length
+    (merge.loop s l₁ l₂ l₃).snd ≤ l₁.length + l₂.length
   | [],   r,  t => by simp [merge.loop]
   | _::_, [], t => by simp [merge.loop]
   | a::l, b::r, t => by
-    simp [merge.loop]
+    simp only [merge.loop, List.length_cons]
     cases s a b
-    · simp; have ih := merge_loop_complexity (a :: l) r (b :: t); simp at ih; linarith
-    · simp; have ih := merge_loop_complexity l (b :: r) (a :: t); simp at ih; linarith
+    · have ih := merge_loop_complexity (a :: l) r (b :: t); simp at ih ⊢; linarith
+    · have ih := merge_loop_complexity l (b :: r) (a :: t); simp at ih ⊢; linarith
 
 theorem merge_complexity : ∀ l₁ l₂ : List α,
-  (merge s l₁ l₂).snd ≤ l₁.length + l₂.length
+    (merge s l₁ l₂).snd ≤ l₁.length + l₂.length
   | [], l₂ => by simp [merge.loop]
   | (h₁ :: t₁), [] => by simp [merge.loop]
   | (h₁ :: t₁), (h₂ :: t₂) => by
@@ -59,26 +59,24 @@ theorem merge_complexity : ∀ l₁ l₂ : List α,
     unfold merge.loop
     cases s h₁ h₂
     · have ih := merge_loop_complexity s (h₁ :: t₁) t₂ [h₂]
-      simp at ih
-      simp
+      simp only [List.length_cons, cond_false, ge_iff_le] at ih ⊢
       linarith
     · have ih := merge_loop_complexity s t₁ (h₂ :: t₂) [h₁]
-      simp at ih
-      simp
+      simp only [List.length_cons, cond_true, ge_iff_le] at ih ⊢
       linarith
 
 theorem merge_loop_equivalence : ∀ l₁ l₂ l₃ : List α,
-  (merge.loop s l₁ l₂ l₃).fst = List.merge.loop s l₁ l₂ l₃
+    (merge.loop s l₁ l₂ l₃).fst = List.merge.loop s l₁ l₂ l₃
   | [], r, t => by simp [merge.loop, List.merge.loop]
   | _::_, [], t => by simp [merge.loop, List.merge.loop]
   | a::l, b::r, t => by
-    simp [merge.loop, List.merge.loop]
+    simp only [merge.loop, List.merge.loop]
     cases s a b
-    · simp; exact merge_loop_equivalence (a :: l) r (b :: t)
-    · simp; exact merge_loop_equivalence l (b :: r) (a :: t)
+    · simp only [cond_false]; exact merge_loop_equivalence (a :: l) r (b :: t)
+    · simp only [cond_true]; exact merge_loop_equivalence l (b :: r) (a :: t)
 
 theorem merge_equivalence : ∀ l₁ l₂ : List α,
-  (merge s l₁ l₂).fst = List.merge s l₁ l₂
+    (merge s l₁ l₂).fst = List.merge s l₁ l₂
   | [],       []           => by simp [merge.loop]
   | [],       (h₂ :: t₂)   => by simp [merge.loop]
   | (h₁ :: t₁), []         => by simp [merge.loop]
